@@ -622,23 +622,33 @@
                 `;
             }
 
-            // CRITICAL FIX: Extract ALL special elements BEFORE escaping HTML
+            // Ensure content is a string
+            let formatted = String(content || '');
+            
+            console.log('Original content:', formatted.substring(0, 200)); // Debug
+            
+            // Storage for extracted elements
             const codeBlocks = [];
             const inlineCodes = [];
-            let formatted = String(content); // Ensure it's a string
             
-            // Step 1: Extract and store code blocks with placeholders
-            formatted = formatted.replace(/```(\w*)\n?([\s\S]*?)```/g, function(match, lang, code) {
+            // STEP 1: Extract code blocks with FLEXIBLE regex
+            // This matches: ```optional-language + optional-whitespace + code + optional-whitespace + ```
+            formatted = formatted.replace(/```(\w*)\s*\n([\s\S]*?)```/g, function(match, lang, code) {
+                console.log('Found code block! Language:', lang || 'none', 'Length:', code.length); // Debug
+                
                 const placeholder = `___CODEBLOCK_${codeBlocks.length}___`;
                 const cleanCode = code.trim();
                 const language = lang || 'code';
                 const codeId = 'code-' + Math.random().toString(36).substr(2, 9);
                 const lineCount = cleanCode.split('\n').length;
                 
+                console.log('Code block lines:', lineCount); // Debug
+                
                 // Add expand button for code longer than 25 lines
                 const expandBtn = lineCount > 25 ? 
                     `<button class="expand-btn" onclick="toggleCodeHeight(this)">Expand ▼</button>` : '';
                 
+                // Create the code block HTML
                 const codeBlockHtml = `<div class="code-block-wrapper">
                     <div class="code-block-header">
                         <span class="code-language">${language}</span>
@@ -654,28 +664,30 @@
                 return placeholder;
             });
             
-            // Step 2: Extract and store inline code with placeholders
+            console.log('After code block extraction, blocks found:', codeBlocks.length); // Debug
+            
+            // STEP 2: Extract inline code
             formatted = formatted.replace(/`([^`\n]+)`/g, function(match, code) {
                 const placeholder = `___INLINE_${inlineCodes.length}___`;
                 inlineCodes.push(`<code>${escapeHtml(code)}</code>`);
                 return placeholder;
             });
             
-            // Step 3: Escape HTML for the remaining text
+            // STEP 3: Escape HTML for remaining text
             formatted = escapeHtml(formatted);
             
-            // Step 4: Format bold (after HTML escape, before restoring code)
+            // STEP 4: Format bold
             formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             
-            // Step 5: Format line breaks
+            // STEP 5: Format line breaks
             formatted = formatted.replace(/\n/g, '<br>');
             
-            // Step 6: Restore inline code
+            // STEP 6: Restore inline code
             inlineCodes.forEach((code, index) => {
                 formatted = formatted.replace(`___INLINE_${index}___`, code);
             });
             
-            // Step 7: Restore code blocks
+            // STEP 7: Restore code blocks
             codeBlocks.forEach((block, index) => {
                 formatted = formatted.replace(`___CODEBLOCK_${index}___`, block);
             });
@@ -683,6 +695,8 @@
             messageDiv.innerHTML = header + '<div class="message-content">' + formatted + '</div>';
             messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            console.log('Message added successfully'); // Debug
         }
 
         function escapeHtml(text) {
