@@ -622,11 +622,13 @@
                 `;
             }
 
-            let formatted = escapeHtml(content);
+            // CRITICAL FIX: Extract code blocks BEFORE escaping HTML
+            const codeBlocks = [];
+            let formatted = content;
             
-            // CRITICAL FIX: Format code blocks FIRST before any other formatting
-            // Match ```language\ncode``` pattern
+            // Replace code blocks with placeholders and store them
             formatted = formatted.replace(/```(\w*)\n?([\s\S]*?)```/g, function(match, lang, code) {
+                const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
                 const cleanCode = code.trim();
                 const language = lang || 'code';
                 const codeId = 'code-' + Math.random().toString(36).substr(2, 9);
@@ -636,7 +638,7 @@
                 const expandBtn = lineCount > 25 ? 
                     `<button class="expand-btn" onclick="toggleCodeHeight(this)">Expand ▼</button>` : '';
                 
-                return `<div class="code-block-wrapper">
+                const codeBlockHtml = `<div class="code-block-wrapper">
                     <div class="code-block-header">
                         <span class="code-language">${language}</span>
                         <div class="code-actions">
@@ -644,8 +646,19 @@
                             <button class="copy-btn" onclick="copyCode('${codeId}')">Copy</button>
                         </div>
                     </div>
-                    <pre id="${codeId}"><code>${cleanCode}</code></pre>
+                    <pre id="${codeId}"><code>${escapeHtml(cleanCode)}</code></pre>
                 </div>`;
+                
+                codeBlocks.push(codeBlockHtml);
+                return placeholder;
+            });
+            
+            // Now escape HTML for the non-code parts
+            formatted = escapeHtml(formatted);
+            
+            // Restore code blocks
+            codeBlocks.forEach((block, index) => {
+                formatted = formatted.replace(`__CODE_BLOCK_${index}__`, block);
             });
             
             // Format inline code (`code`)
@@ -654,7 +667,7 @@
             // Format bold (**text**)
             formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             
-            // Format line breaks (but not inside code blocks - they're already handled)
+            // Format line breaks
             formatted = formatted.replace(/\n/g, '<br>');
 
             messageDiv.innerHTML = header + '<div class="message-content">' + formatted + '</div>';
