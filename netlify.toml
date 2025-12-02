@@ -5,6 +5,5 @@
   node_bundler = "esbuild"
 
 # Increase timeout for long code generation
-[[functions]]
-  [functions.chat]
-    timeout = 60  # 60 seconds max (Netlify free tier limit)
+[functions.chat]
+  timeout = 60
