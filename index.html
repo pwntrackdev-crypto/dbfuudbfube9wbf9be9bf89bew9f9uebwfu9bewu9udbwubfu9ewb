@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persona-o1-mini</title>
+    <title>Persona-o1 (dev) Model</title>
     <style>
         * {
             margin: 0;
@@ -12,56 +12,117 @@
         }
 
         body {
-            background: #f5f5f5;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Segoe UI', 'Helvetica', 'Arial', sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            color: #2d2d2d;
+            color: #e0e0e0;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated background particles */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(138, 43, 226, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(64, 224, 208, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 105, 180, 0.1) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(30px, -30px); }
+            66% { transform: translate(-20px, 20px); }
         }
 
         /* Header */
         .header {
-            background: white;
-            border-bottom: 1px solid #e5e5e5;
-            padding: 16px 24px;
+            background: rgba(26, 26, 46, 0.7);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(138, 43, 226, 0.3);
+            padding: 20px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 20px rgba(138, 43, 226, 0.2);
+            position: relative;
+            z-index: 10;
         }
 
         .header-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
         }
 
         .logo {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #d97757 0%, #c1694f 100%);
-            border-radius: 6px;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #8a2be2 0%, #ff69b4 50%, #40e0d0 100%);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: 600;
-            font-size: 18px;
+            font-weight: 700;
+            font-size: 20px;
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 6px 25px rgba(138, 43, 226, 0.6); }
         }
 
         .title {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 500;
-            color: #2d2d2d;
+            background: linear-gradient(90deg, #8a2be2, #ff69b4, #40e0d0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .model-badge {
-            background: #f0f0f0;
-            padding: 4px 10px;
-            border-radius: 12px;
+            background: rgba(138, 43, 226, 0.2);
+            border: 1px solid rgba(138, 43, 226, 0.4);
+            padding: 6px 14px;
+            border-radius: 20px;
             font-size: 12px;
-            color: #666;
+            color: #c4a0ff;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #40e0d0;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #40e0d0;
+            border-radius: 50%;
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         /* Chat Container */
@@ -69,10 +130,12 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            max-width: 900px;
+            max-width: 1000px;
             width: 100%;
             margin: 0 auto;
             padding: 24px;
+            position: relative;
+            z-index: 1;
         }
 
         .chat-messages {
@@ -81,83 +144,154 @@
             padding: 20px 0;
             margin-bottom: 20px;
             min-height: 400px;
-            max-height: calc(100vh - 280px);
+            max-height: calc(100vh - 300px);
         }
 
         .message {
-            margin-bottom: 32px;
-            animation: fadeIn 0.3s ease;
+            margin-bottom: 24px;
+            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px) scale(0.95);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1);
+            }
         }
 
         .message-header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
+            gap: 12px;
+            margin-bottom: 10px;
         }
 
         .message-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 16px;
+            backdrop-filter: blur(10px);
         }
 
         .message.user .message-icon {
-            background: #f0f0f0;
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
         }
 
         .message.assistant .message-icon {
-            background: linear-gradient(135deg, #d97757 0%, #c1694f 100%);
-            color: white;
+            background: linear-gradient(135deg, #8a2be2, #4b0082);
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.3);
         }
 
         .message-label {
             font-weight: 500;
             font-size: 14px;
-            color: #2d2d2d;
+            color: #c4a0ff;
         }
 
         .message-content {
-            padding-left: 38px;
-            line-height: 1.6;
+            padding-left: 44px;
+            line-height: 1.7;
             font-size: 15px;
-            color: #2d2d2d;
+            color: #e0e0e0;
         }
 
         .message.error .message-content {
-            color: #dc3545;
-            background: #fff5f5;
-            padding: 12px 16px;
-            border-radius: 8px;
-            border-left: 3px solid #dc3545;
-            margin-left: 38px;
+            color: #ff6b9d;
+            background: rgba(255, 107, 157, 0.1);
+            padding: 16px 20px;
+            border-radius: 12px;
+            border-left: 3px solid #ff6b9d;
+            margin-left: 44px;
+            backdrop-filter: blur(10px);
         }
 
-        /* Code Blocks - Fixed to prevent cutoff */
+        /* Code Blocks */
+        .code-block-wrapper {
+            position: relative;
+            margin: 16px 0;
+        }
+
+        .code-block-header {
+            background: rgba(26, 26, 46, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 10px 16px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            border-bottom: none;
+        }
+
+        .code-language {
+            color: #40e0d0;
+            font-size: 12px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .code-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .copy-btn {
+            background: rgba(138, 43, 226, 0.3);
+            border: 1px solid rgba(138, 43, 226, 0.5);
+            color: #c4a0ff;
+            padding: 4px 12px;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .copy-btn:hover {
+            background: rgba(138, 43, 226, 0.5);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(138, 43, 226, 0.4);
+        }
+
+        .copy-btn.copied {
+            background: rgba(64, 224, 208, 0.3);
+            border-color: #40e0d0;
+            color: #40e0d0;
+        }
+
         .message pre {
-            background: #1e1e1e;
+            background: rgba(10, 10, 30, 0.9);
+            backdrop-filter: blur(10px);
             color: #d4d4d4;
-            padding: 16px;
-            border-radius: 8px;
+            padding: 20px;
+            border-radius: 0 0 12px 12px;
             overflow-x: auto;
-            margin: 12px 0;
-            border: 1px solid #333;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            overflow-y: auto;
+            margin: 0;
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            border-top: none;
+            font-family: 'Monaco', 'Consolas', monospace;
             font-size: 13px;
-            line-height: 1.5;
-            /* These properties ensure code doesn't get cut off */
+            line-height: 1.6;
             white-space: pre;
             word-wrap: normal;
             max-width: 100%;
+            max-height: 600px;
+        }
+
+        .message pre.full-height {
+            max-height: none;
         }
 
         .message pre code {
@@ -167,53 +301,56 @@
         }
 
         .message code {
-            background: #f5f5f5;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            background: rgba(138, 43, 226, 0.2);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Consolas', monospace;
             font-size: 13px;
-            color: #d97757;
+            color: #ff69b4;
+            border: 1px solid rgba(138, 43, 226, 0.3);
         }
 
         .message pre code {
             background: none;
             padding: 0;
             color: #d4d4d4;
+            border: none;
         }
 
         .message strong {
             font-weight: 600;
-            color: #1a1a1a;
+            color: #fff;
         }
 
         /* Input Area */
         .input-area {
-            background: white;
-            border: 1.5px solid #d0d0d0;
-            border-radius: 12px;
-            padding: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: border-color 0.2s, box-shadow 0.2s;
+            background: rgba(26, 26, 46, 0.7);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(138, 43, 226, 0.3);
+            border-radius: 16px;
+            padding: 6px;
+            box-shadow: 0 8px 32px rgba(138, 43, 226, 0.2);
+            transition: all 0.3s;
         }
 
         .input-area:focus-within {
-            border-color: #d97757;
-            box-shadow: 0 2px 12px rgba(217, 119, 87, 0.15);
+            border-color: rgba(138, 43, 226, 0.6);
+            box-shadow: 0 8px 32px rgba(138, 43, 226, 0.4), 0 0 40px rgba(138, 43, 226, 0.2);
         }
 
         .input-wrapper {
             display: flex;
-            gap: 8px;
-            padding: 4px;
+            gap: 10px;
+            padding: 6px;
         }
 
         #user-input {
             flex: 1;
             background: transparent;
             border: none;
-            color: #2d2d2d;
-            padding: 12px 16px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', 'Arial', sans-serif;
+            color: #e0e0e0;
+            padding: 14px 18px;
+            font-family: 'Segoe UI', 'Helvetica', 'Arial', sans-serif;
             font-size: 15px;
             outline: none;
             resize: none;
@@ -222,27 +359,27 @@
         }
 
         #user-input::placeholder {
-            color: #999;
+            color: rgba(196, 160, 255, 0.4);
         }
 
         button {
-            background: #d97757;
+            background: linear-gradient(135deg, #8a2be2 0%, #ff69b4 100%);
             border: none;
             color: white;
-            padding: 12px 24px;
+            padding: 14px 28px;
             font-family: inherit;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.2s;
+            border-radius: 12px;
+            transition: all 0.3s;
             white-space: nowrap;
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
         }
 
         button:hover:not(:disabled) {
-            background: #c1694f;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(217, 119, 87, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(138, 43, 226, 0.6);
         }
 
         button:active:not(:disabled) {
@@ -256,33 +393,35 @@
 
         .controls {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             margin-top: 12px;
             justify-content: center;
         }
 
         .controls button {
-            padding: 8px 16px;
+            padding: 10px 20px;
             font-size: 13px;
-            background: transparent;
-            border: 1px solid #d0d0d0;
-            color: #666;
-            border-radius: 8px;
+            background: rgba(26, 26, 46, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(138, 43, 226, 0.4);
+            color: #c4a0ff;
+            border-radius: 10px;
+            box-shadow: none;
         }
 
         .controls button:hover {
-            background: #f5f5f5;
-            border-color: #b0b0b0;
-            color: #2d2d2d;
-            transform: none;
-            box-shadow: none;
+            background: rgba(138, 43, 226, 0.3);
+            border-color: #8a2be2;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.3);
         }
 
         /* Loading */
         .loading {
             display: none;
-            color: #d97757;
-            padding: 12px 0;
+            color: #40e0d0;
+            padding: 16px 0;
             text-align: center;
             font-size: 14px;
         }
@@ -308,14 +447,15 @@
             height: 10px;
         }
         ::-webkit-scrollbar-track { 
-            background: #f5f5f5; 
+            background: rgba(26, 26, 46, 0.3); 
+            border-radius: 5px;
         }
         ::-webkit-scrollbar-thumb { 
-            background: #d0d0d0; 
+            background: linear-gradient(180deg, #8a2be2, #ff69b4);
             border-radius: 5px; 
         }
         ::-webkit-scrollbar-thumb:hover { 
-            background: #b0b0b0; 
+            background: linear-gradient(180deg, #9a3bf2, #ff79c4);
         }
 
         /* Responsive */
@@ -325,15 +465,21 @@
             }
             
             .header {
-                padding: 12px 16px;
+                padding: 16px;
             }
             
             .message-content {
                 padding-left: 0;
             }
             
-            .message-header {
-                margin-bottom: 8px;
+            .logo {
+                width: 36px;
+                height: 36px;
+                font-size: 18px;
+            }
+
+            .status-indicator {
+                display: none;
             }
         }
     </style>
@@ -341,9 +487,13 @@
 <body>
     <div class="header">
         <div class="header-left">
-            <div class="logo">C</div>
-            <div class="title">Chat Interface</div>
-            <div class="model-badge">Persona o1-Mini</div>
+            <div class="logo">🌊</div>
+            <div class="title">Vibe Code - Persona-o1 (dev)</div>
+            <div class="model-badge">Persona-o1 (dev)</div>
+        </div>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>vibing</span>
         </div>
     </div>
 
@@ -351,30 +501,30 @@
         <div class="chat-messages" id="chat-messages">
             <div class="message assistant">
                 <div class="message-header">
-                    <div class="message-icon">C</div>
-                    <div class="message-label">Persona o1-Mini</div>
+                    <div class="message-icon">🤖</div>
+                    <div class="message-label">Persona-o1 Assistant</div>
                 </div>
-                <div class="message-content">Hello! I'm Persona-o1-Mini, an AI assistant created by Chin Yi Zhe. How can I help you today?</div>
+                <div class="message-content">Yo, what's good? Let's code something dope together. 💜</div>
             </div>
         </div>
 
-        <div class="loading" id="loading">Thinking</div>
+        <div class="loading" id="loading">✨ thinking</div>
 
         <div class="input-area">
             <div class="input-wrapper">
                 <textarea 
                     id="user-input" 
-                    placeholder="Message Persona-o1....." 
+                    placeholder="type something chill..." 
                     rows="1"
                     autocomplete="off"
                 ></textarea>
-                <button id="send-btn" onclick="sendMessage()">Send</button>
+                <button id="send-btn" onclick="sendMessage()">Send ✨</button>
             </div>
         </div>
 
         <div class="controls">
-            <button onclick="clearChat()">Clear Chat</button>
-            <button onclick="newSession()">New Session</button>
+            <button onclick="clearChat()">🗑️ Clear</button>
+            <button onclick="newSession()">🔄 New Vibe</button>
         </div>
     </div>
 
@@ -448,11 +598,11 @@
             let label = '';
             
             if (type === 'user') {
-                icon = '👤';
+                icon = '😎';
                 label = 'You';
             } else if (type === 'assistant') {
-                icon = 'C';
-                label = 'Persona';
+                icon = '🤖';
+                label = 'AI Assistant';
             } else if (type === 'error') {
                 icon = '⚠️';
                 label = 'Error';
@@ -472,7 +622,25 @@
             
             // Format code blocks (```language\ncode```)
             formatted = formatted.replace(/```(\w*)\n?([\s\S]*?)```/g, function(match, lang, code) {
-                return '<pre><code>' + code.trim() + '</code></pre>';
+                const cleanCode = code.trim();
+                const language = lang || 'code';
+                const codeId = 'code-' + Math.random().toString(36).substr(2, 9);
+                const lineCount = cleanCode.split('\n').length;
+                const expandBtn = lineCount > 30 ? 
+                    '<button class="copy-btn" onclick="toggleCodeHeight(this)">Expand</button>' : '';
+                
+                return `
+                    <div class="code-block-wrapper">
+                        <div class="code-block-header">
+                            <span class="code-language">${language}</span>
+                            <div class="code-actions">
+                                ${expandBtn}
+                                <button class="copy-btn" onclick="copyCode('${codeId}')">Copy</button>
+                            </div>
+                        </div>
+                        <pre id="${codeId}"><code>${cleanCode}</code></pre>
+                    </div>
+                `;
             });
             
             // Format inline code (`code`)
@@ -499,10 +667,10 @@
             document.getElementById('chat-messages').innerHTML = `
                 <div class="message assistant">
                     <div class="message-header">
-                        <div class="message-icon">C</div>
-                        <div class="message-label">Persona</div>
+                        <div class="message-icon">🤖</div>
+                        <div class="message-label">Persona-o1 Assistant</div>
                     </div>
-                    <div class="message-content">Chat cleared. How can I help you?</div>
+                    <div class="message-content">Chat cleared. Let's start fresh! 🌊</div>
                 </div>`;
         }
 
@@ -511,11 +679,34 @@
             document.getElementById('chat-messages').innerHTML = `
                 <div class="message assistant">
                     <div class="message-header">
-                        <div class="message-icon">C</div>
-                        <div class="message-label">Persona</div>
+                        <div class="message-icon">🤖</div>
+                        <div class="message-label">AI Assistant</div>
                     </div>
-                    <div class="message-content">New session started. How can I help you today?</div>
+                    <div class="message-content">New session, new vibes. What we building today? 💜</div>
                 </div>`;
+        }
+
+        function copyCode(elementId) {
+            const codeElement = document.getElementById(elementId);
+            const code = codeElement.textContent;
+            
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        function toggleCodeHeight(btn) {
+            const pre = btn.closest('.code-block-wrapper').querySelector('pre');
+            pre.classList.toggle('full-height');
+            btn.textContent = pre.classList.contains('full-height') ? 'Collapse' : 'Expand';
         }
     </script>
 </body>
