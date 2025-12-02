@@ -622,13 +622,14 @@
                 `;
             }
 
-            // CRITICAL FIX: Extract code blocks BEFORE escaping HTML
+            // CRITICAL FIX: Extract ALL special elements BEFORE escaping HTML
             const codeBlocks = [];
-            let formatted = content;
+            const inlineCodes = [];
+            let formatted = String(content); // Ensure it's a string
             
-            // Replace code blocks with placeholders and store them
+            // Step 1: Extract and store code blocks with placeholders
             formatted = formatted.replace(/```(\w*)\n?([\s\S]*?)```/g, function(match, lang, code) {
-                const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
+                const placeholder = `___CODEBLOCK_${codeBlocks.length}___`;
                 const cleanCode = code.trim();
                 const language = lang || 'code';
                 const codeId = 'code-' + Math.random().toString(36).substr(2, 9);
@@ -653,22 +654,31 @@
                 return placeholder;
             });
             
-            // Now escape HTML for the non-code parts
-            formatted = escapeHtml(formatted);
-            
-            // Restore code blocks
-            codeBlocks.forEach((block, index) => {
-                formatted = formatted.replace(`__CODE_BLOCK_${index}__`, block);
+            // Step 2: Extract and store inline code with placeholders
+            formatted = formatted.replace(/`([^`\n]+)`/g, function(match, code) {
+                const placeholder = `___INLINE_${inlineCodes.length}___`;
+                inlineCodes.push(`<code>${escapeHtml(code)}</code>`);
+                return placeholder;
             });
             
-            // Format inline code (`code`)
-            formatted = formatted.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+            // Step 3: Escape HTML for the remaining text
+            formatted = escapeHtml(formatted);
             
-            // Format bold (**text**)
+            // Step 4: Format bold (after HTML escape, before restoring code)
             formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             
-            // Format line breaks
+            // Step 5: Format line breaks
             formatted = formatted.replace(/\n/g, '<br>');
+            
+            // Step 6: Restore inline code
+            inlineCodes.forEach((code, index) => {
+                formatted = formatted.replace(`___INLINE_${index}___`, code);
+            });
+            
+            // Step 7: Restore code blocks
+            codeBlocks.forEach((block, index) => {
+                formatted = formatted.replace(`___CODEBLOCK_${index}___`, block);
+            });
 
             messageDiv.innerHTML = header + '<div class="message-content">' + formatted + '</div>';
             messagesDiv.appendChild(messageDiv);
