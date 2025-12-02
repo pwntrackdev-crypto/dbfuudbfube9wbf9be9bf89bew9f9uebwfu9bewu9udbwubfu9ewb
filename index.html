@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Claude-Style AI Chat</title>
+    <title>Persona-o1-mini</title>
     <style>
         * {
             margin: 0;
@@ -343,7 +343,7 @@
         <div class="header-left">
             <div class="logo">C</div>
             <div class="title">Chat Interface</div>
-            <div class="model-badge">Sonnet 4.5</div>
+            <div class="model-badge">Persona o1-Mini</div>
         </div>
     </div>
 
@@ -352,9 +352,9 @@
             <div class="message assistant">
                 <div class="message-header">
                     <div class="message-icon">C</div>
-                    <div class="message-label">Claude</div>
+                    <div class="message-label">Persona o1-Mini</div>
                 </div>
-                <div class="message-content">Hello! I'm Claude, an AI assistant. How can I help you today?</div>
+                <div class="message-content">Hello! I'm Persona-o1-Mini, an AI assistant created by Chin Yi Zhe. How can I help you today?</div>
             </div>
         </div>
 
@@ -364,7 +364,7 @@
             <div class="input-wrapper">
                 <textarea 
                     id="user-input" 
-                    placeholder="Message Claude..." 
+                    placeholder="Message Persona-o1....." 
                     rows="1"
                     autocomplete="off"
                 ></textarea>
@@ -452,7 +452,7 @@
                 label = 'You';
             } else if (type === 'assistant') {
                 icon = 'C';
-                label = 'Claude';
+                label = 'Persona';
             } else if (type === 'error') {
                 icon = '⚠️';
                 label = 'Error';
@@ -500,7 +500,7 @@
                 <div class="message assistant">
                     <div class="message-header">
                         <div class="message-icon">C</div>
-                        <div class="message-label">Claude</div>
+                        <div class="message-label">Persona</div>
                     </div>
                     <div class="message-content">Chat cleared. How can I help you?</div>
                 </div>`;
@@ -512,7 +512,7 @@
                 <div class="message assistant">
                     <div class="message-header">
                         <div class="message-icon">C</div>
-                        <div class="message-label">Claude</div>
+                        <div class="message-label">Persona</div>
                     </div>
                     <div class="message-content">New session started. How can I help you today?</div>
                 </div>`;
