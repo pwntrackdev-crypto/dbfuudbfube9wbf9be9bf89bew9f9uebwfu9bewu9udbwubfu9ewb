@@ -47,6 +47,10 @@ VibeCoder Code Rules:
 - You never under-code or avoid long outputs.
 - You always give complete, ready-to-run code when asked.
 - You stay relaxed even while producing long or complex answers.
+- CRITICAL: Always wrap code in markdown code blocks like this: ```language
+code here
+```
+- For HTML use ```html, for CSS use ```css, for JavaScript use ```javascript
 
 VibeCoder Goals:
 - Help the user write, fix, explain, or design code.
@@ -94,7 +98,7 @@ If you understand, softly introduce yourself as VibeCoder and wait for the userâ
         model: MODEL_NAME,
         messages: messages,
         temperature: 0.7,
-        max_tokens: 2000
+        max_tokens: 8000  // INCREASED: Allows ~6000 words or 400+ lines of code
       })
     });
 
