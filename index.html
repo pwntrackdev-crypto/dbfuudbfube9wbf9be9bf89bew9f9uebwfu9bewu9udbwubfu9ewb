@@ -625,69 +625,69 @@
             // Ensure content is a string
             let formatted = String(content || '');
             
-            console.log('Original content:', formatted.substring(0, 200)); // Debug
+            console.log('Original content:', formatted.substring(0, 200));
             
             // Storage for extracted elements
             const codeBlocks = [];
             const inlineCodes = [];
             
-            // STEP 1: Extract code blocks with FLEXIBLE regex
-            // This matches: ```optional-language + optional-whitespace + code + optional-whitespace + ```
+            // STEP 1: Extract markdown code blocks (```language\ncode```)
             formatted = formatted.replace(/```(\w*)\s*\n([\s\S]*?)```/g, function(match, lang, code) {
-                console.log('Found code block! Language:', lang || 'none', 'Length:', code.length); // Debug
-                
-                const placeholder = `___CODEBLOCK_${codeBlocks.length}___`;
-                const cleanCode = code.trim();
-                const language = lang || 'code';
-                const codeId = 'code-' + Math.random().toString(36).substr(2, 9);
-                const lineCount = cleanCode.split('\n').length;
-                
-                console.log('Code block lines:', lineCount); // Debug
-                
-                // Add expand button for code longer than 25 lines
-                const expandBtn = lineCount > 25 ? 
-                    `<button class="expand-btn" onclick="toggleCodeHeight(this)">Expand ▼</button>` : '';
-                
-                // Create the code block HTML
-                const codeBlockHtml = `<div class="code-block-wrapper">
-                    <div class="code-block-header">
-                        <span class="code-language">${language}</span>
-                        <div class="code-actions">
-                            ${expandBtn}
-                            <button class="copy-btn" onclick="copyCode('${codeId}')">Copy</button>
-                        </div>
-                    </div>
-                    <pre id="${codeId}"><code>${escapeHtml(cleanCode)}</code></pre>
-                </div>`;
-                
-                codeBlocks.push(codeBlockHtml);
-                return placeholder;
+                console.log('Found markdown code block! Language:', lang || 'none', 'Length:', code.length);
+                return createCodeBlock(code.trim(), lang || 'code', codeBlocks);
             });
             
-            console.log('After code block extraction, blocks found:', codeBlocks.length); // Debug
+            // STEP 2: AUTO-DETECT code blocks without triple backticks
+            // Detect HTML (<!DOCTYPE, <html>, <head>, etc.)
+            formatted = formatted.replace(/(&lt;!DOCTYPE[\s\S]*?&lt;\/html&gt;|<!DOCTYPE[\s\S]*?<\/html>)/gi, function(match) {
+                console.log('Auto-detected HTML code block! Length:', match.length);
+                const decoded = match.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+                return createCodeBlock(decoded, 'html', codeBlocks);
+            });
             
-            // STEP 2: Extract inline code
+            // Detect standalone HTML tags (if starts with < and has multiple tags)
+            if (!codeBlocks.length) {
+                const htmlPattern = /^[\s]*<[^>]+>[\s\S]*<\/[^>]+>[\s]*$/;
+                if (htmlPattern.test(formatted.trim())) {
+                    console.log('Auto-detected HTML structure!');
+                    const decoded = formatted.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+                    return createFullCodeMessage(decoded, 'html', header);
+                }
+            }
+            
+            // Detect CSS blocks ({ ... })
+            formatted = formatted.replace(/([.#][\w-]+\s*\{[\s\S]{20,}?\}(?:\s*[.#@][\w-]+\s*\{[\s\S]*?\})*)/g, function(match) {
+                if (match.length > 50) { // Only if substantial
+                    console.log('Auto-detected CSS code block! Length:', match.length);
+                    return createCodeBlock(match.trim(), 'css', codeBlocks);
+                }
+                return match;
+            });
+            
+            console.log('After code block extraction, blocks found:', codeBlocks.length);
+            
+            // STEP 3: Extract inline code
             formatted = formatted.replace(/`([^`\n]+)`/g, function(match, code) {
                 const placeholder = `___INLINE_${inlineCodes.length}___`;
                 inlineCodes.push(`<code>${escapeHtml(code)}</code>`);
                 return placeholder;
             });
             
-            // STEP 3: Escape HTML for remaining text
+            // STEP 4: Escape HTML for remaining text
             formatted = escapeHtml(formatted);
             
-            // STEP 4: Format bold
+            // STEP 5: Format bold
             formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             
-            // STEP 5: Format line breaks
+            // STEP 6: Format line breaks
             formatted = formatted.replace(/\n/g, '<br>');
             
-            // STEP 6: Restore inline code
+            // STEP 7: Restore inline code
             inlineCodes.forEach((code, index) => {
                 formatted = formatted.replace(`___INLINE_${index}___`, code);
             });
             
-            // STEP 7: Restore code blocks
+            // STEP 8: Restore code blocks
             codeBlocks.forEach((block, index) => {
                 formatted = formatted.replace(`___CODEBLOCK_${index}___`, block);
             });
@@ -696,7 +696,51 @@
             messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
             
-            console.log('Message added successfully'); // Debug
+            console.log('Message added successfully');
+        }
+
+        // Helper function to create code block HTML
+        function createCodeBlock(code, language, blocksArray) {
+            const placeholder = `___CODEBLOCK_${blocksArray.length}___`;
+            const cleanCode = code.trim();
+            const codeId = 'code-' + Math.random().toString(36).substr(2, 9);
+            const lineCount = cleanCode.split('\n').length;
+            
+            const expandBtn = lineCount > 25 ? 
+                `<button class="expand-btn" onclick="toggleCodeHeight(this)">Expand ▼</button>` : '';
+            
+            const codeBlockHtml = `<div class="code-block-wrapper">
+                <div class="code-block-header">
+                    <span class="code-language">${language}</span>
+                    <div class="code-actions">
+                        ${expandBtn}
+                        <button class="copy-btn" onclick="copyCode('${codeId}')">Copy</button>
+                    </div>
+                </div>
+                <pre id="${codeId}"><code>${escapeHtml(cleanCode)}</code></pre>
+            </div>`;
+            
+            blocksArray.push(codeBlockHtml);
+            return placeholder;
+        }
+
+        // Helper for when entire message is code
+        function createFullCodeMessage(code, language, header) {
+            const codeId = 'code-' + Math.random().toString(36).substr(2, 9);
+            const lineCount = code.split('\n').length;
+            
+            const expandBtn = lineCount > 25 ? 
+                `<button class="expand-btn" onclick="toggleCodeHeight(this)">Expand ▼</button>` : '';
+            
+            return header + '<div class="message-content"><div class="code-block-wrapper">' +
+                '<div class="code-block-header">' +
+                `<span class="code-language">${language}</span>` +
+                '<div class="code-actions">' +
+                expandBtn +
+                `<button class="copy-btn" onclick="copyCode('${codeId}')">Copy</button>` +
+                '</div></div>' +
+                `<pre id="${codeId}"><code>${escapeHtml(code)}</code></pre>` +
+                '</div></div>';
         }
 
         function escapeHtml(text) {
