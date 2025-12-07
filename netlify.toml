@@ -1,5 +1,10 @@
-[build]
-  functions = "netlify/functions"
+# Netlify configuration for STREAMING version
 
-[functions]
-  node_bundler = "esbuild"
+# Edge Function configuration
+[[edge_functions]]
+  path = "/api/chat-stream"
+  function = "chat-stream"
+
+# Build settings (optional)
+[build]
+  publish = "."
