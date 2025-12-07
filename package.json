@@ -1,0 +1,8 @@
+{
+  "name": "persona-o1-backend",
+  "version": "1.0.0",
+  "description": "AI chat backend for Persona-o1",
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}
