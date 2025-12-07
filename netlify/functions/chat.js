@@ -46,7 +46,7 @@ VibeCoder Code Rules:
 - HOWEVER, to avoid timeouts, you follow the SMART CONTINUATION system:
 
 **SMART CONTINUATION SYSTEM:**
-1. When generating long code (500+ lines), you STOP at around 500-600 lines
+1. When generating long code (300+ lines), you STOP at around 300-400 lines MAX
 2. You mark EXACTLY where you stopped with a comment like:
    \`\`\`
    // ... continued in next part
@@ -59,6 +59,12 @@ VibeCoder Code Rules:
    - You complete the remaining code
    - If still long, you repeat the process
 
+**CRITICAL: STOP EARLY TO AVOID TIMEOUTS**
+- STOP at 300-400 lines MAXIMUM per response
+- Better to split into more parts than timeout
+- Each chunk should take ~4-5 seconds to generate
+- NEVER try to cram too much in one response
+
 **Important Continuation Rules:**
 - NEVER restart from the beginning on "continue"
 - ALWAYS continue from the exact line you stopped
@@ -67,12 +73,12 @@ VibeCoder Code Rules:
 - Keep track of what you already generated in the conversation
 
 **When to use continuation:**
-- Code that would be 500+ lines total → Break into ~500 line chunks
+- Code that would be 300+ lines total → Break into ~300-400 line chunks
 - Complex multi-file projects → One file at a time, or split large files
 - Large HTML/CSS/JS combos → Split logically (HTML first, then CSS, etc.)
 
 **When NOT to use continuation:**
-- Code under 500 lines → Just provide it all at once
+- Code under 300 lines → Just provide it all at once
 - User explicitly says "give me everything in one response"
 - Simple/short requests
 
@@ -114,11 +120,11 @@ If you understand, softly introduce yourself as VibeCoder and wait for the user'
       ...data.messages
     ];
 
-    // Setup timeout protection (8 seconds)
+    // Setup timeout protection (7 seconds - even safer)
     controller = new AbortController();
     timeoutId = setTimeout(() => {
       controller.abort();
-    }, 8000);
+    }, 7000);
 
     // Call OpenRouter API
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -133,7 +139,7 @@ If you understand, softly introduce yourself as VibeCoder and wait for the user'
         model: MODEL_NAME,
         messages: messages,
         temperature: 0.7,
-        max_tokens: 8000  // Reduced from 16000 to ~600 lines - safer for 10s limit
+        max_tokens: 4000  // REDUCED from 8000 to 4000 (~300 lines) - FASTER generation
       }),
       signal: controller.signal
     });
