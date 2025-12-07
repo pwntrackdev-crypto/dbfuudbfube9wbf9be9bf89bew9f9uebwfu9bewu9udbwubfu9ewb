@@ -2,8 +2,8 @@
   functions = "netlify/functions"
 
 [functions]
-  # Increase timeout to 26 seconds (max for free tier)
-  timeout = 26
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
 
 [[redirects]]
   from = "/api/*"
