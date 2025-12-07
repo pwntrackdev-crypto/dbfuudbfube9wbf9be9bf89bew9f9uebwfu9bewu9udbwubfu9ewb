@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
 exports.handler = async (event, context) => {
-  // Set longer timeout
+  // Set callback wait
   context.callbackWaitsForEmptyEventLoop = false;
 
   // CORS headers
@@ -39,7 +39,7 @@ exports.handler = async (event, context) => {
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ error: 'API key not configured' })
+        body: JSON.stringify({ error: 'API key not configured in Netlify environment variables' })
       };
     }
 
@@ -51,11 +51,11 @@ exports.handler = async (event, context) => {
 
     console.log('Sending request to Claude API...');
 
-    // Call Claude API with timeout
+    // Call Claude API with 8-second timeout (Netlify free tier limit is 10s total)
     const controller = new AbortController();
     const timeout = setTimeout(() => {
       controller.abort();
-    }, 25000); // 25 second timeout (Netlify allows 26s max)
+    }, 8000); // 8 seconds to leave buffer for processing
 
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -67,7 +67,7 @@ exports.handler = async (event, context) => {
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
-          max_tokens: 4096,
+          max_tokens: 2048, // Reduced from 4096 to speed up response
           messages: messages,
           temperature: 1.0
         }),
@@ -131,7 +131,7 @@ exports.handler = async (event, context) => {
           statusCode: 504,
           headers,
           body: JSON.stringify({ 
-            error: 'Request timed out. Try asking for a simpler version or break it into smaller parts.' 
+            error: 'Request took too long (Netlify free tier has 10s limit). Try asking for: 1) Just the HTML structure, or 2) A simpler version' 
           })
         };
       }
