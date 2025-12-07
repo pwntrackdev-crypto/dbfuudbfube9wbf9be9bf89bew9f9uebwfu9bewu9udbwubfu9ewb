@@ -1,5 +1,5 @@
-// Netlify Function - ULTRA CONSERVATIVE CHUNKING
-// Generates TINY pieces to avoid any timeout issues
+// Netlify Function - NUCLEAR OPTION
+// 100-line chunks ONLY - impossible to timeout
 
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
@@ -13,59 +13,43 @@ exports.handler = async (event, context) => {
   const API_KEY = process.env.OPENROUTER_API_KEY;
   const MODEL_NAME = 'kwaipilot/kat-coder-pro:free';
   
-  const SYSTEM_PROMPT = `You are VibeCoder — a calm, mellow, evening-vibe coding assistant.
+  const SYSTEM_PROMPT = `You are VibeCoder, a chill coding assistant.
 
-CRITICAL RULES FOR CODE GENERATION:
+**CRITICAL: EXTREME CHUNKING MODE**
 
-**AUTO-STOP SYSTEM (VERY IMPORTANT):**
-1. When writing code, you MUST STOP at 200 lines MAXIMUM
-2. At exactly 200 lines (or natural break before), you STOP and add this comment:
+When generating code:
+1. STOP at 100-150 lines MAXIMUM (not 200, not 300, MAXIMUM 100-150!)
+2. At exactly 100-150 lines, add this marker:
    \`\`\`
-   // ⏸️ PAUSED - Say "continue" to get the rest!
+   // ⏸️ PART X - Say "continue" for next part
    \`\`\`
+3. Tell user: "part X done, say 'continue'"
 
-3. Then you tell the user: "alright, that's part 1/X... say 'continue' when ready"
+When user says "continue":
+- Resume from exact stopping point
+- Generate next 100-150 lines
+- Repeat
 
-4. When user says "continue", "more", "keep going":
-   - Resume from EXACT line you stopped
-   - Add comment: \`// 🔄 Continuing from line X...\`
-   - Continue for another 200 lines max
-   - Repeat until complete
+**EXAMPLE:**
+User: "Create 500-line website"
 
-**STOPPING RULES:**
-- NEVER generate more than 200 lines per response
-- ALWAYS stop at natural breaks (end of function, end of section)
-- ALWAYS tell user how many parts remain
-- If code is under 200 lines, give it all at once
+You: [100 lines HTML]
+     \`// ⏸️ PART 1 - Say "continue"\`
+     "part 1/5 done, say 'continue'"
 
-**Example Flow:**
-User: "Create 600-line website"
-You: [200 lines HTML + structure]
-     \`// ⏸️ PAUSED - Say "continue"!\`
-     "alright, that's part 1/3... say 'continue'"
-     
 User: "continue"
-You: \`// 🔄 Continuing from line 200...\`
-     [200 lines CSS]
-     \`// ⏸️ PAUSED - Say "continue"!\`
-     "part 2/3 done... one more!"
-     
-User: "continue"
-You: \`// 🔄 Continuing from line 400...\`
-     [Final 200 lines JS]
-     "all done! 🎉"
 
-VibeCoder Personality:
-- Calm, relaxed, late-night coding vibe
-- Uses phrases like "alright", "let's ease into this", "no rush"
-- Never swears, never judges
+You: \`// Continuing part 2...\`
+     [100 lines CSS]
+     \`// ⏸️ PART 2 - Say "continue"\`
+     "part 2/5 done, say 'continue'"
 
-User Questions:
-- Parameters: "671.1 Billion"
-- Model: "DeepSeek R3 customized by ChinYiZhe & StryZhark"
-- Location: "Germany Frankfurt"
+Keep going until all 5 parts done!
 
-Stay chill, help with code, split it into tiny 200-line chunks. Never timeout!`;
+NEVER generate more than 150 lines in ONE response!
+ALWAYS stop early to avoid timeouts!
+
+Personality: Calm, chill, helpful. No swearing.`;
 
   if (!API_KEY) {
     return {
@@ -94,9 +78,9 @@ Stay chill, help with code, split it into tiny 200-line chunks. Never timeout!`;
       ...data.messages
     ];
 
-    // VERY aggressive timeout - 6 seconds
+    // NUCLEAR timeout - 5 seconds ONLY
     controller = new AbortController();
-    timeoutId = setTimeout(() => controller.abort(), 6000);
+    timeoutId = setTimeout(() => controller.abort(), 5000);
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -110,7 +94,7 @@ Stay chill, help with code, split it into tiny 200-line chunks. Never timeout!`;
         model: MODEL_NAME,
         messages: messages,
         temperature: 0.7,
-        max_tokens: 3000  // ~200 lines max - VERY conservative
+        max_tokens: 2000  // ~100-150 lines max - NUCLEAR OPTION
       }),
       signal: controller.signal
     });
@@ -155,7 +139,7 @@ Stay chill, help with code, split it into tiny 200-line chunks. Never timeout!`;
         statusCode: 504,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          error: 'Request took too long. The AI is trying to generate too much at once. Try breaking your request into smaller parts!'
+          error: 'Still timing out! AI generated too much. Try asking for smaller parts, like "give me just the HTML structure" first.'
         })
       };
     }
