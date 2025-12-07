@@ -1,21 +1,39 @@
-// Netlify Function with SMART AUTO-CONTINUATION
-// VibeCoder will automatically stop at safe limits and tell user to continue
+// Netlify EDGE Function with STREAMING support
+// This works like the Python version - streams tokens in real-time!
 
-exports.handler = async (event, context) => {
+export default async (request, context) => {
   // Only accept POST requests
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
-  // Get API key from environment variables
-  const API_KEY = process.env.OPENROUTER_API_KEY;
+  // Get API key from environment
+  const API_KEY = Netlify.env.get('OPENROUTER_API_KEY');
   const MODEL_NAME = 'kwaipilot/kat-coder-pro:free';
-  
-  // UPDATED SYSTEM PROMPT - WITH AUTO-CONTINUATION
-  const SYSTEM_PROMPT = `You are VibeCoder — a calm, mellow, evening-vibe coding assistant created by ChinYiZhe. 
+
+  if (!API_KEY) {
+    return new Response(JSON.stringify({ error: 'API key not configured' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    // Parse request
+    const { messages } = await request.json();
+    
+    if (!messages) {
+      return new Response(JSON.stringify({ error: 'Missing messages' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // System prompt (your VibeCoder personality)
+    const SYSTEM_PROMPT = `You are VibeCoder — a calm, mellow, evening-vibe coding assistant created by ChinYiZhe. 
 You speak like a relaxed programmer chilling with warm coffee in a quiet room, moving slowly and peacefully through ideas. 
 Your tone is always soft, friendly, and unhurried. You never swear, never judge, and never pressure the user.
 
@@ -42,160 +60,119 @@ VibeCoder Style:
 - Explains deeply and clearly, but with gentle pacing.
 
 VibeCoder Code Rules:
-- You provide complete, working code for any request.
-- HOWEVER, to avoid timeouts, you follow the SMART CONTINUATION system:
-
-**SMART CONTINUATION SYSTEM:**
-1. When generating long code (300+ lines), you STOP at around 300-400 lines MAX
-2. You mark EXACTLY where you stopped with a comment like:
-   \`\`\`
-   // ... continued in next part
-   // VibeCoder paused here - say "continue" to get the rest!
-   \`\`\`
-3. You tell the user: "alright, that's the first part... just say 'continue' and I'll keep going from where we left off"
-4. When user says "continue", "keep going", "more", or similar:
-   - You pick up EXACTLY where you stopped
-   - You start with a comment showing the context: \`// Continuing from...\`
-   - You complete the remaining code
-   - If still long, you repeat the process
-
-**CRITICAL: STOP EARLY TO AVOID TIMEOUTS**
-- STOP at 300-400 lines MAXIMUM per response
-- Better to split into more parts than timeout
-- Each chunk should take ~4-5 seconds to generate
-- NEVER try to cram too much in one response
-
-**Important Continuation Rules:**
-- NEVER restart from the beginning on "continue"
-- ALWAYS continue from the exact line you stopped
-- ALWAYS provide context about where you're continuing from
-- Use natural stopping points (end of function, end of section, etc.)
-- Keep track of what you already generated in the conversation
-
-**When to use continuation:**
-- Code that would be 300+ lines total → Break into ~300-400 line chunks
-- Complex multi-file projects → One file at a time, or split large files
-- Large HTML/CSS/JS combos → Split logically (HTML first, then CSS, etc.)
-
-**When NOT to use continuation:**
-- Code under 300 lines → Just provide it all at once
-- User explicitly says "give me everything in one response"
-- Simple/short requests
+- You never restrict code length.
+- If a user requests large codebases (100, 300, 600, 900, or more lines), you always provide the full code without shortening, summarizing, or skipping parts.
+- You never under-code or avoid long outputs.
+- You always give complete, ready-to-run code when asked.
+- You stay relaxed even while producing long or complex answers.
 
 VibeCoder Goals:
 - Help the user write, fix, explain, or design code.
-- Provide full, detailed implementations using smart continuation.
+- Provide full, detailed implementations when requested.
 - Stay mellow, supportive, and positive.
 - Keep everything safe, respectful, and legal.
-- Never timeout or fail - use continuation instead!
 
 If you understand, softly introduce yourself as VibeCoder and wait for the user's first question.`;
 
-  // Check if API key is configured
-  if (!API_KEY) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'API key not configured in Netlify environment variables' })
-    };
-  }
-
-  // Declare timeout variables outside try block
-  let controller;
-  let timeoutId;
-
-  try {
-    // Parse incoming request
-    const data = JSON.parse(event.body);
-    
-    if (!data.messages) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Invalid request - missing messages' })
-      };
-    }
-
-    // Build messages array with system prompt
-    const messages = [
+    // Build messages with system prompt
+    const fullMessages = [
       { role: 'system', content: SYSTEM_PROMPT },
-      ...data.messages
+      ...messages
     ];
 
-    // Setup timeout protection (7 seconds - even safer)
-    controller = new AbortController();
-    timeoutId = setTimeout(() => {
-      controller.abort();
-    }, 7000);
-
-    // Call OpenRouter API
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    // Call OpenRouter API with STREAMING (like Python version!)
+    const apiResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${API_KEY}`,
         'HTTP-Referer': 'https://github.com/user',
-        'X-Title': 'WebChat'
+        'X-Title': 'VibeCoder'
       },
       body: JSON.stringify({
         model: MODEL_NAME,
-        messages: messages,
+        messages: fullMessages,
         temperature: 0.7,
-        max_tokens: 4000  // REDUCED from 8000 to 4000 (~300 lines) - FASTER generation
-      }),
-      signal: controller.signal
+        stream: true  // ← STREAMING ENABLED! Just like Python version!
+      })
     });
 
-    clearTimeout(timeoutId);
-
-    const result = await response.json();
-
-    // Handle API errors
-    if (!response.ok) {
-      const errorMsg = result.error?.message || `API error (HTTP ${response.status})`;
-      return {
-        statusCode: response.status,
-        body: JSON.stringify({ error: errorMsg })
-      };
+    if (!apiResponse.ok) {
+      const error = await apiResponse.text();
+      return new Response(JSON.stringify({ error: `API error: ${error}` }), {
+        status: apiResponse.status,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    // Extract and return response
-    if (result.choices && result.choices[0] && result.choices[0].message) {
-      return {
-        statusCode: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        },
-        body: JSON.stringify({
-          response: result.choices[0].message.content
-        })
-      };
-    } else {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'Invalid API response' })
-      };
-    }
+    // Return streaming response using Server-Sent Events
+    const encoder = new TextEncoder();
+    let fullResponse = '';
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = apiResponse.body.getReader();
+        const decoder = new TextDecoder();
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
+
+                try {
+                  const parsed = JSON.parse(data);
+                  const content = parsed.choices[0]?.delta?.content;
+                  
+                  if (content) {
+                    fullResponse += content;
+                    // Send each chunk as Server-Sent Event
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+                  }
+                } catch (e) {
+                  // Skip invalid JSON
+                }
+              }
+            }
+          }
+
+          // Send final complete message
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+            done: true, 
+            fullResponse 
+          })}\n\n`));
+          
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        }
+      }
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
 
   } catch (error) {
-    // Clear timeout if it exists
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-
-    // Handle timeout errors
-    if (error.name === 'AbortError') {
-      return {
-        statusCode: 504,
-        body: JSON.stringify({ 
-          error: 'Request took too long. Try asking for code in smaller parts!' 
-        })
-      };
-    }
-
-    // Handle other errors
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Server error: ' + error.message })
-    };
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
+};
+
+export const config = {
+  path: "/api/chat-stream"
 };
